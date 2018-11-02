@@ -15,6 +15,7 @@ public class AppController : MonoBehaviour
 	public Camera FirstPersonCamera;
 	public GameObject DetectedPlanePrefab;
 	public GameObject AimPrefab;
+	public GameObject ReferencePlanPrefab;
 	private bool _isShowPlanesEnabled = true;
 	private List<DetectedPlane> _allPlanes = new List<DetectedPlane>();
 	private GameObject _aim = null;
@@ -23,6 +24,7 @@ public class AppController : MonoBehaviour
 	private string _cameraPosition;
 	private string _hitTextureCoord;
 	private string _hitPoint;
+	private GameObject _referencePlan;
 
 	/// <summary>
 	/// The rotation in degrees need to apply to model when the Point model is placed.
@@ -39,6 +41,9 @@ public class AppController : MonoBehaviour
 	
 	// Update is called once per frame
 	void Update () {
+		
+//		_UpdateAim();
+		
 		Touch touch;
 		if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Began)
 		{
@@ -101,6 +106,20 @@ public class AppController : MonoBehaviour
 	                _currentPlane = (DetectedPlane) hit.Trackable;
 	                _aimAnchor = Session.CreateAnchor(hit.Pose);
 	                
+
+	                if (_referencePlan == null)
+	                {
+		                // Instantiate Plan model at the hit pose.
+		                _referencePlan = Instantiate(ReferencePlanPrefab, _aimAnchor.transform.position,
+			                _aimAnchor.transform.rotation);
+		                // Make Plan model a child of the anchor.
+		                _referencePlan.transform.parent = _aimAnchor.transform;
+	                }
+	                
+	                var session = GameObject.Find("ARCore Device")
+		                .GetComponent<ARCoreSession>(); 
+	                session.SessionConfig.PlaneFindingMode = DetectedPlaneFindingMode.Disabled; 
+//	                session.OnEnable();
                 }              
             }
 	}
@@ -118,14 +137,14 @@ public class AppController : MonoBehaviour
 		// make new aim
 		if (_aimAnchor != null && _aim == null)
 		{
-			// Instantiate Andy model at the hit pose.
+			// Instantiate Aim model at the hit pose.
 			_aim = Instantiate(AimPrefab, _aimAnchor.transform.position, _aimAnchor.transform.rotation);
 
 			// Compensate for the Aim rotation facing away from the raycast (i.e. camera).
 //			_aim.transform.Rotate(0, KModelRotation, 0, Space.Self);
 
-			// Make Point model a child of the anchor.
-			_aim.transform.parent = _aimAnchor.transform;  
+			// Make Aim model a child of the anchor.
+//			_aim.transform.parent = _aimAnchor.transform;  
 			
 			return;
 		}
@@ -133,57 +152,29 @@ public class AppController : MonoBehaviour
 		// update position
 		if (_aimAnchor != null && _aim != null)
 		{
-//			_cameraPosition = Tag 
-//			                  + " FirstPersonCamera.transform.position = " 
-//			                  + FirstPersonCamera.transform.position
-				;
-//			Debug.Log(_cameraPosition);
-//			StartCoroutine(_log(_cameraPosition));
-			
-//			Ray ray = FirstPersonCamera.ScreenPointToRay(FirstPersonCamera.transform.position + FirstPersonCamera.transform.forward);
 			Ray ray = new Ray(FirstPersonCamera.transform.position, FirstPersonCamera.transform.forward);
-//			RaycastHit hit;
-
-			_cameraPosition = "new Ray(" + ray.origin + " -> " + ray.direction + ")";
-
-			TrackableHit hit;
-			TrackableHitFlags raycastFilter = TrackableHitFlags.PlaneWithinPolygon |
-			                                  TrackableHitFlags.FeaturePointWithSurfaceNormal;
-
-//			if (Frame.Raycast(FirstPersonCamera.transform.position, FirstPersonCamera.transform.forward, out hit,
-//				500, raycastFilter))
-			float centerX = 0.5f * Screen.width;
-			float centerY = 0.5f * Screen.height;
 			
-			if (Frame.Raycast(centerX, centerY, raycastFilter, out hit))
+			RaycastHit raycastHit;
+			if (Physics.Raycast(ray, out raycastHit))
 			{
-				_hitPoint = hit.Pose.position.ToString();
-//				_hitPoint = hit.point.ToString();
-				_aim.transform.position = hit.Pose.position;
+				if (raycastHit.collider.name.Contains("ReferencePlane"))
+				{
+					_aim.transform.position = raycastHit.point;
+				// Movement speed in units/sec.
+//					float speed = 0.8F;
+//					Vector3 startPosition = _aim.transform.position;
+//					Vector3 endPosition = raycastHit.point;
+//					_aim.transform.position = Vector3.Lerp (startPosition, endPosition, speed);
+//					_aim.transform.Rotate(0, KModelRotation, 0, Space.Self); // compensate rotate
+//					Debug.Log("startPosition, endPosition" + startPosition + ", " + endPosition);
+				}
+				else
+				{
+					var lastY = _aim.transform.position.y;
+					Vector3 newPos = new Vector3(raycastHit.point.x, lastY, raycastHit.point.z);
+					_aim.transform.position = newPos;
+				}
 			}
-			
-//			if (Frame.Raycast(ray, out hit))
-//			{
-//				_hitTextureCoord = hit.textureCoord.ToString();
-//				_hitPoint = hit.point.ToString();
-//			}
-			
-			
-			
-			Debug.Log("" 
-			          +_cameraPosition
-//			          + ", "+ "_hitTextureCoord = " + _hitTextureCoord
-			          + ", _hitPoint = " + _hitPoint
-			          );
-		}
-	}
-
-	IEnumerator _log(string s)
-	{
-		for (;;)
-		{
-			Debug.Log(s);
-			yield return new WaitForSeconds(.25f);
 		}
 	}
 }

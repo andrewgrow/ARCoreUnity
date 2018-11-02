@@ -495,6 +495,8 @@ MonoBehaviour:
   DetectedPlanePrefab: {fileID: 1654175882956584, guid: 6a35c744e5010405c847fad90282d2be,
     type: 2}
   AimPrefab: {fileID: 1705688310187440, guid: ecefaaba0fd2648e1a34e2d3d35d85e5, type: 2}
+  ReferencePlanPrefab: {fileID: 1878779782007196, guid: 1ac115f5dd9ac4436919a56bf2bd4a69,
+    type: 2}
 --- !u!20 &2146470151 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 20155940112608238, guid: c10877f7cd5764de18d46d7b777d1faa,
