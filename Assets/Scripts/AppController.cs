@@ -5,8 +5,8 @@ using UnityEngine;
 using GoogleARCore;
 using GoogleARCore.Examples.Common;
 
-#if UNITY_EDITOR
 // Set up touch input propagation while using Instant Preview in the editor.
+#if UNITY_EDITOR
 using Input = GoogleARCore.InstantPreviewInput;
 #endif
 
@@ -14,7 +14,7 @@ public class AppController : MonoBehaviour
 {
 	public Camera FirstPersonCamera;
 	public GameObject DetectedPlanePrefab;
-	private bool _showPlanes = true;
+	private bool _isShowPlanesEnabled = true;
 	private List<DetectedPlane> _allPlanes = new List<DetectedPlane>();
 
 	private const string Tag = "NewBehaviourScript";
@@ -32,18 +32,34 @@ public class AppController : MonoBehaviour
 			return;
 		}
 		Session.GetTrackables<DetectedPlane>(_allPlanes);
-		foreach (var plane in _allPlanes)
-		{
-			if (plane.TrackingState == TrackingState.Tracking)
-			{
-				OnTogglePlanes(!_showPlanes);
-				break;
-			}
-		}
+		
+		
+		// enable or disable a visualisation of found planes
+		// FIXME (it need to remove or enable) 
+//		foreach (var plane in _allPlanes)
+//		{
+//			if (plane.TrackingState == TrackingState.Tracking)
+//			{
+//				//	revers (!bool)
+//				OnTogglePlanes(!_isShowPlanesEnabled);
+//				break;
+//			}
+//		}
 	}
-	
+
+	/// <summary>
+	/// Physics will be updated here.
+	/// </summary>
+	private void FixedUpdate()
+	{
+		
+	}
+
+	/// <summary>
+	/// Enable or disable rendering for all planes.
+	/// </summary>
 	public void OnTogglePlanes(bool flag) {
-		_showPlanes = flag;
+		_isShowPlanesEnabled = flag;
 		foreach (GameObject plane in GameObject.FindGameObjectsWithTag ("plane")) {
 			Renderer r = plane.GetComponent<Renderer> ();
 			DetectedPlaneVisualizer t = plane.GetComponent<DetectedPlaneVisualizer>();
