@@ -25,6 +25,7 @@ public class AppController : MonoBehaviour
 	private string _hitTextureCoord;
 	private string _hitPoint;
 	private GameObject _referencePlan;
+	public GUIStyle buttonBlue;
 
 	/// <summary>
 	/// The rotation in degrees need to apply to model when the Point model is placed.
@@ -37,12 +38,21 @@ public class AppController : MonoBehaviour
 	// Use this for initialization
 	void Start () {
 		Debug.Log(Tag + "-> Start()");
+//		Screen.fullScreen = false;
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		
-//		_UpdateAim();
+
+		if (OnBackButtonClicked())
+		{
+			return;
+		}
+
+		if (Screen.fullScreen)
+		{
+			Screen.fullScreen = false;
+		}
 		
 		Touch touch;
 		if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Began)
@@ -68,7 +78,27 @@ public class AppController : MonoBehaviour
 //			}
 //		}
 	}
-	
+
+	private bool OnBackButtonClicked()
+	{
+		if (Input.GetKey(KeyCode.Escape))
+		{
+			if (Application.platform == RuntimePlatform.Android)
+			{
+				AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").GetStatic<AndroidJavaObject>("currentActivity");
+				activity.Call<bool>("moveTaskToBack", true);
+			}
+			else
+			{
+				Application.Quit();
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
 	/// <summary>
 	/// Enable or disable rendering for all planes.
 	/// </summary>
@@ -176,5 +206,44 @@ public class AppController : MonoBehaviour
 				}
 			}
 		}
+	}
+	
+//	void OnGUI () {
+//		if (GUI.Button (new Rect (25, 25, 300, 100), "Button")) {
+//			// This code is executed when the Button is clicked
+//		}
+//	}
+
+	public void OnClickButtonDelete()
+	{
+		// Destroy the Aim
+		if (_aim != null)
+		{
+			Destroy(_aim);
+			_aim = null;
+		}
+
+		// destroy the Aim's Anchor
+		if (_aimAnchor != null)
+		{
+			Destroy(_aimAnchor);
+			_aimAnchor = null;
+		}
+
+		if (_referencePlan != null)
+		{
+			Destroy(_referencePlan);
+			_referencePlan = null;
+		}
+		
+		var session = GameObject.Find("ARCore Device")
+			.GetComponent<ARCoreSession>(); 
+		session.SessionConfig.PlaneFindingMode = DetectedPlaneFindingMode.HorizontalAndVertical; 
+	    session.OnEnable();
+	}
+
+	private void OnApplicationPause(bool pauseStatus)
+	{
+		OnClickButtonDelete();
 	}
 }
