@@ -125,6 +125,7 @@ public class AppController : MonoBehaviour
 	            if (Vector3.Dot(FirstPersonCamera.transform.position - hit.Pose.position,
 		                hit.Pose.rotation * Vector3.up) < 0)
 	            {
+		            Debug.LogError("back rayCast");
 		            return;
 	            }
 	            
@@ -230,11 +231,15 @@ public class AppController : MonoBehaviour
 			_aimAnchor = null;
 		}
 
+		// destroy the Reference Plan
 		if (_referencePlan != null)
 		{
 			Destroy(_referencePlan);
 			_referencePlan = null;
 		}
+		
+		// destroy the Current Plan
+		_currentPlane = null;
 		
 		var session = GameObject.Find("ARCore Device")
 			.GetComponent<ARCoreSession>(); 
