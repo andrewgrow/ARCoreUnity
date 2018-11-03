@@ -17,11 +17,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace GoogleARCore.Examples.Common
-{
-    using GoogleARCore;
-    using UnityEngine;
+using GoogleARCore;
+using UnityEngine;
 
+namespace ArCoreScripts
+{
     /// <summary>
     /// Visualize the point cloud.
     /// </summary>
@@ -33,6 +33,21 @@ namespace GoogleARCore.Examples.Common
 
         private Vector3[] m_Points = new Vector3[k_MaxPointCount];
 
+        private bool _isAllow = false;
+
+        public bool IsAllow
+        {
+            get { return _isAllow; }
+            set
+            {
+                _isAllow = value;
+                if (_isAllow == false && m_Mesh != null)
+                {
+                    m_Mesh.Clear();
+                }
+            }
+        }
+
         /// <summary>
         /// Unity start.
         /// </summary>
@@ -40,6 +55,7 @@ namespace GoogleARCore.Examples.Common
         {
             m_Mesh = GetComponent<MeshFilter>().mesh;
             m_Mesh.Clear();
+            IsAllow = true;
         }
 
         /// <summary>
@@ -48,7 +64,7 @@ namespace GoogleARCore.Examples.Common
         public void Update()
         {
             // Fill in the data to draw the point cloud.
-            if (Frame.PointCloud.IsUpdatedThisFrame)
+            if (Frame.PointCloud.IsUpdatedThisFrame && IsAllow)
             {
                 // Copy the point cloud points for mesh verticies.
                 for (int i = 0; i < Frame.PointCloud.PointCount; i++)

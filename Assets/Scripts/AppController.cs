@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using ArCoreScripts;
 using UnityEngine;
 using GoogleARCore;
 using GoogleARCore.Examples.Common;
@@ -13,9 +14,9 @@ using Input = GoogleARCore.InstantPreviewInput;
 public class AppController : MonoBehaviour
 {
 	public Camera FirstPersonCamera;
-	public GameObject DetectedPlanePrefab;
 	public GameObject AimPrefab;
 	public GameObject ReferencePlanPrefab;
+	public GameObject PointCloudPrefab;
 	private bool _isShowPlanesEnabled = true;
 	private List<DetectedPlane> _allPlanes = new List<DetectedPlane>();
 	private GameObject _aim = null;
@@ -26,6 +27,8 @@ public class AppController : MonoBehaviour
 	private string _hitPoint;
 	private GameObject _referencePlan;
 	public GUIStyle buttonBlue;
+	private GameObject _pointCloud;
+	private Transform _aimTransform;
 
 	/// <summary>
 	/// The rotation in degrees need to apply to model when the Point model is placed.
@@ -37,8 +40,8 @@ public class AppController : MonoBehaviour
 
 	// Use this for initialization
 	void Start () {
-		Debug.Log(Tag + "-> Start()");
-//		Screen.fullScreen = false;
+		// Blue dots
+		_pointCloud = Instantiate(PointCloudPrefab);
 	}
 	
 	// Update is called once per frame
@@ -53,7 +56,7 @@ public class AppController : MonoBehaviour
 		{
 			Screen.fullScreen = false;
 		}
-		
+
 		Touch touch;
 		if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Began)
 		{
@@ -85,7 +88,8 @@ public class AppController : MonoBehaviour
 		{
 			if (Application.platform == RuntimePlatform.Android)
 			{
-				AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").GetStatic<AndroidJavaObject>("currentActivity");
+				AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer")
+					.GetStatic<AndroidJavaObject>("currentActivity");
 				activity.Call<bool>("moveTaskToBack", true);
 			}
 			else
@@ -147,9 +151,16 @@ public class AppController : MonoBehaviour
 		                _referencePlan.transform.parent = _aimAnchor.transform;
 	                }
 	                
+	                // Remove Point Cloud (blue dots int he Finding Mode
+	                if (_pointCloud != null)
+	                {
+		                PointcloudVisualizer p = _pointCloud.GetComponent<PointcloudVisualizer>();
+		                p.IsAllow = false;  
+	                }
+	                
 	                var session = GameObject.Find("ARCore Device")
 		                .GetComponent<ARCoreSession>(); 
-	                session.SessionConfig.PlaneFindingMode = DetectedPlaneFindingMode.Disabled; 
+	                session.SessionConfig.PlaneFindingMode = DetectedPlaneFindingMode.Disabled;
 //	                session.OnEnable();
                 }              
             }
@@ -170,12 +181,13 @@ public class AppController : MonoBehaviour
 		{
 			// Instantiate Aim model at the hit pose.
 			_aim = Instantiate(AimPrefab, _aimAnchor.transform.position, _aimAnchor.transform.rotation);
+			_aimTransform = _aim.transform;
 
 			// Compensate for the Aim rotation facing away from the raycast (i.e. camera).
-//			_aim.transform.Rotate(0, KModelRotation, 0, Space.Self);
+//			_aimTransform.Rotate(0, KModelRotation, 0, Space.Self);
 
 			// Make Aim model a child of the anchor.
-//			_aim.transform.parent = _aimAnchor.transform;  
+//			_aimTransform.parent = _aimAnchor.transform;  
 			
 			return;
 		}
@@ -188,9 +200,14 @@ public class AppController : MonoBehaviour
 			RaycastHit raycastHit;
 			if (Physics.Raycast(ray, out raycastHit))
 			{
+				if (_aimTransform == null)
+				{
+					return;
+				}
+				
 				if (raycastHit.collider.name.Contains("ReferencePlane"))
 				{
-					_aim.transform.position = raycastHit.point;
+					_aimTransform.position = raycastHit.point;
 				// Movement speed in units/sec.
 //					float speed = 0.8F;
 //					Vector3 startPosition = _aim.transform.position;
@@ -201,9 +218,9 @@ public class AppController : MonoBehaviour
 				}
 				else
 				{
-					var lastY = _aim.transform.position.y;
+					var lastY = _aimTransform.position.y;
 					Vector3 newPos = new Vector3(raycastHit.point.x, lastY, raycastHit.point.z);
-					_aim.transform.position = newPos;
+					_aimTransform.position = newPos;
 				}
 			}
 		}
@@ -237,9 +254,19 @@ public class AppController : MonoBehaviour
 			Destroy(_referencePlan);
 			_referencePlan = null;
 		}
+
+		// remove a link to Transform
+		_aimTransform = null;
 		
 		// destroy the Current Plan
 		_currentPlane = null;
+		
+		// Start showing blue dots
+		if (_pointCloud != null)
+		{
+			PointcloudVisualizer p = _pointCloud.GetComponent<PointcloudVisualizer>();
+			p.IsAllow = true;
+		}
 		
 		var session = GameObject.Find("ARCore Device")
 			.GetComponent<ARCoreSession>(); 
